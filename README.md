@@ -1,3 +1,7 @@
+# Warning
+
+Due to encoding, only work in python2
+
 # ipdtools
 Retro-ingeniering of PacBio's modelling of IPD (RSII, Sequel I, Sequel II v2)
 
