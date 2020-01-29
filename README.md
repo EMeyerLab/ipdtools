@@ -6,6 +6,8 @@ Retro-ingeniering of PacBio's modelling of IPD (RSII, Sequel I, Sequel II v2)
 Python 2.7.17 |Anaconda, Inc.| (default, Oct 21 2019, 19:04:46) 
 [GCC 7.3.0] on linux2
 Type "help", "copyright", "credits" or "license" for more information.
+```
+```python
 >>> import ipdtools
 >>> fastaRecords= ipdtools.ipdModel.loadReferenceContigs('test.fasta')
 >>> model = ipdtools.ipdModel.IpdModel(fastaRecords,"./SP2-C2.h5")
