@@ -82,7 +82,17 @@ optional arguments:
   --verbosity {DEBUG,INFO,WARNING,ERROR, CRITICAL}, -v {DEBUG,INFO,WARNING,ERROR, CRITICAL}
 ```
 
+> RQ: If verbosity is DEBUG or INFO, the program will show a tqdm progress bar
 
+```console
+
+```(py2) user@computer:~/ipdtools/ipdtools/resources$ ipdtools -f test.fasta -o test.csv -v DEBUG
+100%|██████████| 93/93 [00:00<00:00, 2954.90it/s]
+100%|██████████| 92/92 [00:00<00:00, 2890.54it/s]
+100%|██████████| 92/92 [00:00<00:00, 2919.34it/s]
+100%|██████████| 93/93 [00:00<00:00, 2937.36it/s]
+100%|██████████| 93/93 [00:00<00:00, 2935.88it/s]
+```
 
 ### Output .csv header
 
