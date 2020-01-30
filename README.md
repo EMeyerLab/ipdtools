@@ -1,6 +1,6 @@
 # ipdtools
 
-Retro-ingeniering of PacBio's modelling of IPD (**RS II, Sequel I, Sequel II v2**). This **won't** work for **Sequel II with v1.0 chemistry.**
+Retro-ingineering of PacBio's modelling of IPD (**RS II, Sequel I, Sequel II v2**). This **won't** work for **Sequel II with v1.0 chemistry.**
 
 # Background
 
@@ -122,18 +122,6 @@ prediction = model.predictIpdFunc(identifier="seq0")(position,strand)
 print(prediction)
 ```
 
-Or directly from a python string:
-
-```python
-import ipdtools
-
-model = ipdtools.modelFromString('ATGCTTGCTAGATCCCGTAGCTGATTATAGCTAG',modelname="SP2-C2")
-
-position = 15
-strand = 0
-prediction = model.predict(position,strand)
-print(prediction)
-```
 
 #  <a name="whichmodel"></a> Which model should I use ?
 
