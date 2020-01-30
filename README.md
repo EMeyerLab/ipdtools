@@ -97,7 +97,7 @@ model = ipdtools.ipdModel.IpdModel(fastaRecords,modelname="SP2-C2")
 position = 15
 strand = 0
 
-prediction = model.predict(identifier="seq0")(position,strand)
+prediction = model.predictIpdFunc(identifier="seq0")(position,strand)
 print(prediction)
 ```
 
