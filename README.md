@@ -66,7 +66,7 @@ user@computer$:ipdtools -f myfile.fasta -o output.csv -m [MODELNAME]
 ### Output .csv header
 
 Fasta_ID | Position | Strand | Nucleotide | Prediction
-- |:-: | :-: | :-: |
+:-: |:-: | :-: | :-: | :-: |
 [CONTIG] | 0 | `0` | A | xxxx
 [CONTIG] | 0 | `1` | T | xxxx
 [CONTIG] | 1 | `0` | T | xxxx
