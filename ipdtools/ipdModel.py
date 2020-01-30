@@ -43,6 +43,8 @@ from multiprocessing.sharedctypes import RawArray
 import warnings
 import numpy as np
 
+import pandas as pd
+
 byte = np.dtype('byte')
 float32 = np.dtype('float32')
 uint8 = np.dtype('uint8')
@@ -73,12 +75,35 @@ baseToCanonicalCode = {'N': 0, 'A': 0, 'C': 1, 'G': 2, 'T': 3, 'H': 0, 'I': 1, '
 
 codeToBase = dict([(y, x) for (x, y) in list(baseToCode.items())])
 
+def compute_fasta_to_csv(modelname,fastafile,csvout):
+    path_to_model = transform_model_name(modelname)
+    cpl = {"A":"T","T":"A","C":"G","G":"C"}
 
-def loadReferenceAndModel(referencePath, ipdModelFilename):
-    # Load the reference contigs - annotated with their refID from the cmp.h5
-    logging.info("Loading reference contigs {!r}".format(referencePath))
-    contigs = loadReferenceContigs(referencePath,)
-    self.ipdModel = IpdModel(contigs, ipdModelFilename)
+    fastaRecords = loadReferenceContigs(os.path.realpath(fastafile))
+    model = IpdModel(fastaRecords,modelFile=transform_model_name(modelname))
+
+    fasta = load_fasta(os.path.realpath(fastafile))
+
+    list_return = []
+    for contig_name in fasta:
+        seq = fasta[contig_name]
+        predictfunc = model.predictIpdFuncModel(refId=contig_name)
+
+        for i in list(range(len(seq))):
+            prediction_strand0 = predictfunc(i,0)
+            prediction_strand1 = predictfunc(i,1)
+            list_return.append({"Fasta_ID": contig_name,"Position":i,"Strand":0,"Nucleotide":seq[i],"Prediction":prediction_strand0})
+            list_return.append({"Fasta_ID": contig_name,"Position":i,"Strand":1,"Nucleotide":cpl[seq[i]],"Prediction":prediction_strand1})
+
+    df = pd.DataFrame(list_return)
+    df.sort_values(["Fasta_ID","Position","Strand"],inplace=True)
+    df.to_csv(os.path.realpath(csvout),index=False)
+
+def transform_model_name(modelname):
+    resources_dir = _getAbsPath("/resources/")
+    modifiedmodelname = modelname+".h5"
+    modelname = os.path.join(resources_dir,modifiedmodelname)
+    return modelname
 
 def load_fasta(fastafile):
     """Returns a python dict { id : sequence } for the given .fasta file"""
@@ -681,3 +706,11 @@ class IpdModel:
             return 0.0
 
         return f
+
+class modelFromString(IpdModel):
+    def __init__(self,string,modelname):
+        super(modelFromString,self).__init__()
+        self.contig_string = {"seq0":string}
+        self.custom_model = ipdModel.IpdModel(contig_string,transform_model_name_topath(modelname))
+    def predict(position,strand):
+        return self.custom_model.predictIpdFunc(identifier="seq0")(position,strand)

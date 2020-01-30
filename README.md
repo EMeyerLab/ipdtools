@@ -62,6 +62,27 @@ user@computer$:ipdtools -f myfile.fasta -o output.csv -m [MODELNAME]
 
 > See ["Which model should I use ?"](#whichmodel) for more info
 
+Detailed Usage
+
+```console
+user@computer$:ipdtools --help
+usage: ipdtools [-h] [--model {SP2-C2,C2,P4-C2,P5-C3,P6-C4,XL-C2,XL-XL}]
+                --fastafile FASTAFILE --output_csv OUTPUT_CSV
+                [--verbosity {DEBUG,INFO,WARNING,ERROR, CRITICAL}]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --model {SP2-C2,C2,P4-C2,P5-C3,P6-C4,XL-C2,XL-XL}, -m {SP2-C2,C2,P4-C2,P5-C3,P6-C4,XL-C2,XL-XL}
+                        Choose the model for IPD prediction. See the README of
+                        package for more info. DEFAULT: SP2-C2
+  --fastafile FASTAFILE, -f FASTAFILE
+                        Path to a fasta file.
+  --output_csv OUTPUT_CSV, -o OUTPUT_CSV
+                        Output CSV file of predicted IPDs.
+  --verbosity {DEBUG,INFO,WARNING,ERROR, CRITICAL}, -v {DEBUG,INFO,WARNING,ERROR, CRITICAL}
+```
+
+
 
 ### Output .csv header
 

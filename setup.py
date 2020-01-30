@@ -8,7 +8,7 @@ setup(
     author='DELEVOYE Guillaume',
     license=open('LICENSES.txt').read(),
     packages=find_packages("."),
-    package_data={'ipdrools': ['resources/*.h5']},
+    package_data={'ipdtools': ['resources/*.h5']},
     ext_modules=[Extension('ipdtools/tree_predict', ['ipdtools/tree_predict.c'],
                            extra_compile_args=["-O3", "-shared", "-std=c99"],
                            export_symbols=["innerPredict", "innerPredictCtx", "init_native"])],
@@ -17,6 +17,6 @@ setup(
         'numpy'
     ],
     entry_points={'console_scripts': [
-        "ipdtools = ipdtools.launchers.ipdtools:main",
+        "ipdtools = ipdtools.launchers.ipdtools_launcher:main",
     ]},
 )
