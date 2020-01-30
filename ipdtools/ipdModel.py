@@ -45,6 +45,9 @@ import numpy as np
 
 import pandas as pd
 
+from tqdm import tqdm
+import time
+
 byte = np.dtype('byte')
 float32 = np.dtype('float32')
 uint8 = np.dtype('uint8')
@@ -77,7 +80,7 @@ codeToBase = dict([(y, x) for (x, y) in list(baseToCode.items())])
 
 def compute_fasta_to_csv(modelname,fastafile,csvout):
     path_to_model = transform_model_name(modelname)
-    cpl = {"A":"T","T":"A","C":"G","G":"C"}
+    cpl = {"A":"T","T":"A","C":"G","G":"C","N":"N"}
 
     fastaRecords = loadReferenceContigs(os.path.realpath(fastafile))
     model = IpdModel(fastaRecords,modelFile=transform_model_name(modelname))
@@ -89,7 +92,7 @@ def compute_fasta_to_csv(modelname,fastafile,csvout):
         seq = fasta[contig_name]
         predictfunc = model.predictIpdFuncModel(refId=contig_name)
 
-        for i in list(range(len(seq))):
+        for i in tqdm(list(range(len(seq)))):
             prediction_strand0 = predictfunc(i,0)
             prediction_strand1 = predictfunc(i,1)
             list_return.append({"Fasta_ID": contig_name,"Position":i,"Strand":0,"Nucleotide":seq[i],"Prediction":prediction_strand0})
