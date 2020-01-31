@@ -117,6 +117,16 @@ class Str2IPD():
     def predict(self,position,strand=0):
         return self.predictfunc(position,strand)
 
+class batchStr2IPD():
+    def __init__(self,sequences=[],names=[],model="SP2-C2"):
+        self.sequences = [Contig(name,sequence) for (x,y) in zip(sequences,names)]
+        for x in self.sequences:
+            x.cmph5ID = x.id
+        self.model = IpdModel(self.sequences,modelFile=transform_model_name(model))
+        self.predictfunc = {x:self.model.predictIpdFuncModel(refId=name) for x in names}
+    def predict(self,sequence,position,strand=0):
+        return self.predictfunc[sequence](position,strand)
+
 
 def transform_model_name(modelname):
     resources_dir = _getAbsPath("/resources/")
