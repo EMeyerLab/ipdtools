@@ -32,7 +32,7 @@ NB: Methylated DNA is harder to predict because it often involves a mixture of m
 
 - Any C/C++ compiler correctly installed
 
-> Works well on Ubuntu 18.04 LTS. Should work well on MacOS. Windows might not work because of some uncorrected .dll
+> Works well on Ubuntu 18.04 LTS x86. Should'nt work on MacOS or Windows (A dynamical library will be missing)
 
 # Installation
 
