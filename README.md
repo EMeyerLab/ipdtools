@@ -32,6 +32,8 @@ NB: Methylated DNA is harder to predict because it often involves a mixture of m
 
 - Any C/C++ compiler correctly installed
 
+> Works well on Ubuntu 18.04 LTS. Should work well on MacOS. Windows might not work because of some uncorrected .dll
+
 # Installation
 
 ipdtools can be installed with **pip**, which is automatically distributed with any version of python
