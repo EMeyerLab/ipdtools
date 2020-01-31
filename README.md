@@ -147,7 +147,7 @@ batchStr2IPD(
               model="SP2-C2")
 ```
 
-# Available models
+# <a ref=whichmodel> Which model should I use ? </a>
 
 Available models are:
 
