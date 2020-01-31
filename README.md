@@ -109,7 +109,7 @@ Fasta_ID | Position | Strand | Nucleotide | Prediction
 
 ## Python API
 
-ipdtools can be used directly in python to predict from a fasta file
+ipdtools can be used in python to predict from a fasta file
 
 
 ```python
@@ -123,6 +123,17 @@ strand = 0
 
 prediction = model.predictIpdFunc(identifier="seq0")(position,strand)
 print(prediction)
+```
+
+it can also be used to predict directly from a python String():
+
+```python
+>>> import ipdtools
+>>> test = ipdtools.ipdModel.Str2IPD("ATGCTAGCTTTTTGNCTGATTAGCTGA",model="SP2-C2") # Default model is SP2-C2
+>>> test.predict(position=0) # The default is strand0
+1.0641327
+>>> test.predict(position=0,strand=1)
+0.42285475
 ```
 
 

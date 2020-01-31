@@ -107,6 +107,17 @@ def compute_fasta_to_csv(modelname,fastafile,csvout,show_progress_bar=False):
     df.sort_values(["Fasta_ID","Position","Strand"],inplace=True)
     df.to_csv(os.path.realpath(csvout),index=False)
 
+class Str2IPD():
+    def __init__(self,sequence,name="NO_ID",model="SP2-C2"):
+        self.sequence = [Contig(name,sequence)]
+        for x in self.sequence:
+            x.cmph5ID = x.id
+        self.model = IpdModel(self.sequence,modelFile=transform_model_name(model))
+        self.predictfunc = self.model.predictIpdFuncModel(refId=name)
+    def predict(self,position,strand=0):
+        return self.predictfunc(position,strand)
+
+
 def transform_model_name(modelname):
     resources_dir = _getAbsPath("/resources/")
     modifiedmodelname = modelname+".h5"
@@ -715,11 +726,3 @@ class IpdModel:
             return 0.0
 
         return f
-
-class modelFromString(IpdModel):
-    def __init__(self,string,modelname):
-        super(modelFromString,self).__init__()
-        self.contig_string = {"seq0":string}
-        self.custom_model = ipdModel.IpdModel(contig_string,transform_model_name_topath(modelname))
-    def predict(position,strand):
-        return self.custom_model.predictIpdFunc(identifier="seq0")(position,strand)
