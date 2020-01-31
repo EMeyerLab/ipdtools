@@ -138,14 +138,14 @@ Available models are:
 * XL-C2
 * XL-XL
 
-> No model is available for Sequel II with chemistry V1.0
->
-> **SP2-C2 is the latest one, recommanded for Sequel I and Sequel II v2 data**. 
->
-> See [here](https://github.com/PacificBiosciences/kineticsTools/pull/71) for more info.
+**No model** is available for **Sequel II** with **chemistry V1.0**
 
+**SP2-C2 is the latest** of all models [Jan 2020], recommended for **Sequel I and Sequel II v2 data**, including for people using P6-C4 chemistry
 
 **Most RSII user would probably want to use P5-C3 model**
+
+> See [here](https://github.com/PacificBiosciences/kineticsTools/pull/71) for more info.
+
 
 # Conventions used
 
