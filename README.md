@@ -1,6 +1,6 @@
 # ipdtools
 
-Retro-ingeniering of PacBio's modelling of IPD (**RS II, Sequel I, Sequel II v2**). This **won't** work for **Sequel II with v1.0 chemistry.**
+Retro-ingineering of PacBio's modelling of IPD (**RS II, Sequel I, Sequel II v2**). This **won't** work for **Sequel II with v1.0 chemistry.**
 
 # Background
 
@@ -32,9 +32,23 @@ NB: Methylated DNA is harder to predict because it often involves a mixture of m
 
 - Any C/C++ compiler correctly installed
 
+<<<<<<< HEAD
 
 # Installation
 
+=======
+> <center>**/!\ WARNING /!\**:</center>
+
+>
+> *Due to some optimizations in the PacBio's code that rely on the **ASCII encoding** of python 2, **the code doesn't work on python 3** *. Keep in mind that python 2 is **not** the default python interpreter in Ubuntu anymore.
+>
+> I strongly advise you to use a **virtualenv** or **conda environment** although **this is not mandaroty**
+
+# Installation
+
+ipdtools can be installed with **pip**, which is automatically distributed with any version of python
+
+>>>>>>> 0ae3488e98aab7759b940769f0e6131c29290d92
 ```bash
 git clone https://github.com/GDelevoye/ipdtools.git
 pip install ./ipdtools
@@ -74,7 +88,17 @@ optional arguments:
   --verbosity {DEBUG,INFO,WARNING,ERROR, CRITICAL}, -v {DEBUG,INFO,WARNING,ERROR, CRITICAL}
 ```
 
+> RQ: If verbosity is DEBUG or INFO, the program will show a tqdm progress bar
 
+```console
+
+```(py2) user@computer:~/ipdtools/ipdtools/resources$ ipdtools -f test.fasta -o test.csv -v DEBUG
+100%|██████████| 93/93 [00:00<00:00, 2954.90it/s]
+100%|██████████| 92/92 [00:00<00:00, 2890.54it/s]
+100%|██████████| 92/92 [00:00<00:00, 2919.34it/s]
+100%|██████████| 93/93 [00:00<00:00, 2937.36it/s]
+100%|██████████| 93/93 [00:00<00:00, 2935.88it/s]
+```
 
 ### Output .csv header
 
@@ -114,18 +138,6 @@ prediction = model.predictIpdFunc(identifier="seq0")(position,strand)
 print(prediction)
 ```
 
-Or directly from a python string:
-
-```python
-import ipdtools
-
-model = ipdtools.modelFromString('ATGCTTGCTAGATCCCGTAGCTGATTATAGCTAG',modelname="SP2-C2")
-
-position = 15
-strand = 0
-prediction = model.predict(position,strand)
-print(prediction)
-```
 
 #  <a name="whichmodel"></a> Which model should I use ?
 
