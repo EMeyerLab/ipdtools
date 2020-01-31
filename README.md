@@ -125,14 +125,14 @@ prediction = model.predictIpdFunc(identifier="seq0")(position,strand)
 print(prediction)
 ```
 
-it can also be used to predict directly from a python String():
+it can also be used to predict directly from a python string with **Str2IPD**:
 
 ```python
 >>> import ipdtools
->>> test = ipdtools.ipdModel.Str2IPD("ATGCTAGCTTTTTGNCTGATTAGCTGA",model="SP2-C2") # Default model is SP2-C2
->>> test.predict(position=0) # The default is strand0
+>>> predictor = ipdtools.ipdModel.Str2IPD("ATGCTAGCTTTTTGNCTGATTAGCTGA",model="SP2-C2") # Default model is SP2-C2
+>>> predictor.predict(position=0) # The default is strand0
 1.0641327
->>> test.predict(position=0,strand=1)
+>>> predictor.predict(position=0,strand=1)
 0.42285475
 ```
 
