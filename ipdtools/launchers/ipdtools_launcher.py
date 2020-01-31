@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import ipdtools
 import argparse
 import os
@@ -27,7 +29,7 @@ def main():
     parser.add_argument('--verbosity',"-v",
                             help='Choose your verbosity. Default: INFO',
                             required=False,
-                            default="INFO",
+                            default="WARNING",
                             choices=["DEBUG", "INFO", "WARNING", "ERROR, CRITICAL"])
 
     args = parser.parse_args()
@@ -39,7 +41,11 @@ def main():
     logging.basicConfig(stream=sys.stdout, level=eval(verboselevel),
                         format='%(asctime)s %(message)s')
 
-    ipdtools.ipdModel.compute_fasta_to_csv(modelname=args.model,fastafile=fastafile,csvout=output_csv)
+    show_progress_bar = False
+    if args.verbosity in ["DEBUG","INFO"]:
+        show_progress_bar = True
+
+    ipdtools.ipdModel.compute_fasta_to_csv(modelname=args.model,fastafile=fastafile,csvout=output_csv,show_progress_bar=show_progress_bar)
 
 if __name__ == "__main__":
     main()

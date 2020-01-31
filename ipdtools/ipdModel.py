@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 ################################################################################
 # Copyright (c) 2011-2013, Pacific Biosciences of California, Inc.
 #
@@ -78,7 +79,7 @@ baseToCanonicalCode = {'N': 0, 'A': 0, 'C': 1, 'G': 2, 'T': 3, 'H': 0, 'I': 1, '
 
 codeToBase = dict([(y, x) for (x, y) in list(baseToCode.items())])
 
-def compute_fasta_to_csv(modelname,fastafile,csvout):
+def compute_fasta_to_csv(modelname,fastafile,csvout,show_progress_bar=False):
     path_to_model = transform_model_name(modelname)
     cpl = {"A":"T","T":"A","C":"G","G":"C","N":"N"}
 
@@ -92,7 +93,11 @@ def compute_fasta_to_csv(modelname,fastafile,csvout):
         seq = fasta[contig_name]
         predictfunc = model.predictIpdFuncModel(refId=contig_name)
 
-        for i in tqdm(list(range(len(seq)))):
+        iterator = range(len(seq))
+        if show_progress_bar:
+            iterator = tqdm(iterator)
+
+        for i in iterator: # Progress bar will be shown only if specified
             prediction_strand0 = predictfunc(i,0)
             prediction_strand1 = predictfunc(i,1)
             list_return.append({"Fasta_ID": contig_name,"Position":i,"Strand":0,"Nucleotide":seq[i],"Prediction":prediction_strand0})
@@ -188,9 +193,15 @@ class GbmContextModel(object):
         def ds(name):
             return modelH5Group[name][:]
 
-        self.varNames = ds("VarNames")
+        # print("ds(Varnames)",ds("VarNames"))
+        self.varNames = [x.decode('ASCII') for x in ds("VarNames")]
+        # print("self.varNames2",self.varNames)
+
         self.modFeatureIdx = dict((int(self.varNames[x][1:]), x) for x in range(len(self.varNames)) if self.varNames[x][0] == 'M')
         self.canonicalFeatureIdx = dict((int(self.varNames[x][1:]), x) for x in range(len(self.varNames)) if self.varNames[x][0] == 'R')
+
+        # print("self.modFeatureIdx: {}".format(self.modFeatureIdx))
+        # print("self.canonicalFeatureIdx",self.canonicalFeatureIdx)
 
         self.pre = 10
         self.post = 4
@@ -255,25 +266,12 @@ class GbmContextModel(object):
         Needs to be invoked lazily because the native function pointer cannot be pickled
         """
 
-        import platform
 
-        if platform.system() == "Windows":
+        DLL_PATH = os.path.dirname(os.path.dirname(__file__)+"/ipdtools/")
+        # print("******************"+DLL_PATH+"******************")
 
-            libfn = "tree_predict.dll"
-            path = os.path.dirname(os.path.abspath(__file__))
-            windowsLib = path + os.path.sep + libfn
+        self._lib = np.ctypeslib.load_library("tree_predict", DLL_PATH)
 
-            if os.path.exists(windowsLib):
-                self._lib = np.ctypeslib.load_library(libfn, path)
-            else:
-                raise Exception("can't find tree_predict.dll")
-        else:
-            DLL_PATH = _getAbsPath("tree_predict.so")
-
-            if os.path.exists(DLL_PATH):
-                self._lib = np.ctypeslib.load_library("tree_predict.so", DLL_PATH)
-            else:
-                raise Exception("can't find tree_predict.so")
 
         lpb = self._lib
 
@@ -394,14 +392,22 @@ class GbmContextModel(object):
         packCol = np.zeros(n, dtype=np.uint64)
 
         for stringIdx in range(len(ctxStrings)):
-            s = ctxStrings[stringIdx]
+            s = ctxStrings[stringIdx].decode('UTF-32')
             code = 0
 
             for i in range(len(s)):
                 # print(s.decode("utf-8"),i,s.decode('utf-8')[i],baseToCode) # For debug purposes
+                # print("baseToCode",baseToCode)
+                # print("s",s)
+                # print("s",s,"i",i,"s[i]",s[i],"baseToCode",baseToCode,"code",code)
+                # print(s[i])
+                # print("".join([chr(x) for x in s]),chr(s[i]))
+                # print(s,i,s[i])
                 modBits = baseToCode[s[i]]
 
+                # print(i,self.modFeatureIdx)
                 slotForPosition = self.modFeatureIdx[i]
+                # print("modBits",modBits,"slotForPosition",slotForPosition)
 
                 code = code | (modBits << (4 * slotForPosition))
 

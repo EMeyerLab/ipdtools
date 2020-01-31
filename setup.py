@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from setuptools import setup, Extension, find_packages
 import os
 import sys
@@ -8,11 +10,11 @@ setup(
     author='DELEVOYE Guillaume',
     license=open('LICENSES.txt').read(),
     packages=find_packages("."),
+    python_requires='>=3.6',
     package_data={'ipdtools': ['resources/*.h5']},
     ext_modules=[Extension('ipdtools/tree_predict', ['ipdtools/tree_predict.c'],
                            extra_compile_args=["-O3", "-shared", "-std=c99"],
                            export_symbols=["innerPredict", "innerPredictCtx", "init_native"])],
-    zip_safe=False,
     install_requires=[
         'numpy'
     ],

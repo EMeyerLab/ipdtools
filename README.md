@@ -28,20 +28,12 @@ NB: Methylated DNA is harder to predict because it often involves a mixture of m
 
 # Requirements
 
-- Python **2**
+- Python >= 3.6
 
-- A C/C++ compiler
+- Any C/C++ compiler correctly installed
 
-> <center>**/!\ WARNING /!\**:</center>
-
->
-> *Due to some optimizations in the PacBio's code that rely on the **ASCII encoding** of python 2, **the code doesn't work on python 3** *
->
-> I strongly advise you to use a **virtualenv** or **conda environment** although **this is not mandaroty**
 
 # Installation
-
-ipdtools can be installed with **pip**, automatically distributed with any version of python
 
 ```bash
 git clone https://github.com/GDelevoye/ipdtools.git
