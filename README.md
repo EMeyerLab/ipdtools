@@ -136,8 +136,18 @@ it can also be used to predict directly from a python string with **Str2IPD**:
 0.42285475
 ```
 
+Because most of the times you want a prediction for only one model, but many sequences, you can use **batchStr2IPD** which works on the same principle. Here is it's prototype:
 
-#  <a name="whichmodel"></a> Which model should I use ?
+```python
+batchStr2IPD(
+              sequences=["ATCGATGCTGGCGCT",
+                         "ATCGTAGCTGATCGGAGTG",
+                         "CGCGCGCGCGTTA"],
+              names=["seq1","seq2","seq3"],
+              model="SP2-C2")
+```
+
+# Available models
 
 Available models are:
 
