@@ -118,7 +118,7 @@ ipdtools can be used in python to predict from a fasta file
 import ipdtools
 
 fasta = ipdtools.ipdModel.loadReferenceContigs('test.fasta')
-model = ipdtools.ipdModel.IpdModel(fastaRecords,modelname="SP2-C2")
+model = ipdtools.ipdModel.IpdModel(fasta,modelname="SP2-C2")
 
 position = 15
 strand = 0
