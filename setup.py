@@ -16,7 +16,8 @@ setup(
                            extra_compile_args=["-O3", "-shared", "-std=c99"],
                            export_symbols=["innerPredict", "innerPredictCtx", "init_native"])],
     install_requires=[
-        'numpy'
+        'numpy',
+        'h5py'
     ],
     entry_points={'console_scripts': [
         "ipdtools = ipdtools.launchers.ipdtools_launcher:main",
