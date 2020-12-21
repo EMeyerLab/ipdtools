@@ -57,7 +57,8 @@ def main():
     if args.verbosity in ["DEBUG","INFO"]:
         show_progress_bar = True
 
-    ipdtools.ipdModel.compute_fasta_to_csv(modelname=args.model,fastafile=fastafile,csvout=output_csv,show_progress_bar=show_progress_bar,nproc=args.nproc)
+    ipdtools.ipdModel.compute_fasta_to_csv(modelname=args.model, fastafile=fastafile, csv_out=output_csv,
+                                           show_progress_bar=show_progress_bar,nproc=args.nproc)
 
 if __name__ == "__main__":
     main()

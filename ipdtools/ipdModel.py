@@ -34,9 +34,7 @@
 
 import logging
 import os
-import re
 import h5py
-import numpy as np
 import ctypes as C
 from pkg_resources import Requirement, resource_filename
 
@@ -45,9 +43,12 @@ import warnings
 import numpy as np
 
 import pandas as pd
-
 from tqdm import tqdm
-import time
+from joblib import Parallel, delayed
+
+import multiprocessing as mp
+
+import gc # Garbage Collector
 
 byte = np.dtype('byte')
 float32 = np.dtype('float32')
@@ -79,74 +80,147 @@ baseToCanonicalCode = {'N': 0, 'A': 0, 'C': 1, 'G': 2, 'T': 3, 'H': 0, 'I': 1, '
 
 codeToBase = dict([(y, x) for (x, y) in list(baseToCode.items())])
 
-def compute_fasta_to_csv(modelname,fastafile,csvout,show_progress_bar=False,nproc=1):
-    path_to_model = transform_model_name(modelname)
-    cpl = {"A":"T","T":"A","C":"G","G":"C","N":"N"}
 
-    fastaRecords = loadReferenceContigs(os.path.realpath(fastafile))
+def result_writer(queue, fileOut):
+    """ Will be launched as an independant process, writing every that will work until it reads 'poison' on the queue. After it's done, he will close the files"""
+
+    os.system('mkdir -p '+str(os.path.dirname(fileOut)))
+    list_df = []
+
+    logging.debug('[DEBUG] (result_writer) result_writer is ready to write (destination = {})'.format(fileOut))
+
+    while True:  # Continuously listens to the queue
+        if not queue.empty():  # most of the time it will be empty
+            to_write = queue.get() # This is a pandas DataFrame otherwise the word "poison" when we reached the end of analysis
+
+            if not isinstance(to_write,pd.DataFrame):  # If the queue is poisoned
+                logging.debug('[DEBUG] (result_writer) Last line received, writer will end')
+                logging.debug('[DEBUG] (result_writer) WAIT FOR THE WRITER (don\'t interrupt otherwise all computed value will be lost)')
+                final_result = pd.concat(list_df, ignore_index = True)
+                with open(os.path.realpath(fileOut),"w") as myfile:
+                    final_result.to_csv(myfile, sep = ';', index = False)
+                logging.debug('[DEBUG] (result_writer) Written in {}'.format(fileOut))
+
+                break
+
+            else:
+                list_df.append(to_write.copy())
+
+    logging.debug('[DEBUG] (result_writer) Result saved here = {}'.format(os.path.realpath(fileOut)))
+
+    return
+
+def parallelized_function(contig_name,fastafile,modelname,queue,show_progress_bar):
+    logging.info("[INFO] Caring about contig {}".format(contig_name))
+
+    logging.debug("[DEBUG] contig {}, Creating a model from FastaRecords".format(contig_name))
+    fastaRecords = loadReferenceContigs(os.path.realpath(fastafile)) ### Not optimal to do it each time here
+    # But the object "model" cannot be pickled so it has to be done this way
+    cpl = {"A": "T", "T": "A", "C": "G", "G": "C", "N": "N"}
+
+    logging.debug("[DEBUG] contig {}, Creating a model from FastaRecords".format(contig_name))
     model = IpdModel(fastaRecords,modelFile=transform_model_name(modelname))
 
-    fasta = load_fasta(os.path.realpath(fastafile))
+    logging.debug("[DEBUG] contig {}, Fetching the sequence".format(contig_name))
+    fasta = load_fasta(os.path.realpath(fastafile)) # Same
+    seq = fasta[contig_name]
+
+    predictfunc = model.predictIpdFuncModel(refId=contig_name)
 
     list_return = []
-    for contig_name in fasta:
-        seq = fasta[contig_name]
-        predictfunc = model.predictIpdFuncModel(refId=contig_name)
+    iterator = range(len(seq))
 
-        iterator = range(len(seq))
-        if show_progress_bar:
-            iterator = tqdm(iterator)
+    if show_progress_bar:
+        iterator = tqdm(iterator)
 
-        for i in iterator: # Progress bar will be shown only if specified
-            prediction_strand0 = predictfunc(i,0)
-            prediction_strand1 = predictfunc(i,1)
-            list_return.append({"Fasta_ID": contig_name,"Position":i,"Strand":0,"Nucleotide":seq[i],"Prediction":prediction_strand0})
-            list_return.append({"Fasta_ID": contig_name,"Position":i,"Strand":1,"Nucleotide":cpl[seq[i]],"Prediction":prediction_strand1})
+    for i in iterator:  # Progress bar will be shown only if specified
+        prediction_strand0 = int(predictfunc(i, 0))
+        prediction_strand1 = int(predictfunc(i, 1))
+        list_return.append({"Fasta_ID": contig_name, "Position": i, "Strand": 0, "Nucleotide": str(seq[i]),
+                            "Prediction": float(prediction_strand0)})
+        list_return.append({"Fasta_ID": contig_name, "Position": i, "Strand": 1, "Nucleotide": str(cpl[seq[i]]),
+                            "Prediction": float(prediction_strand1)})
+    queue.put(pd.DataFrame(list_return).sort_values(["Fasta_ID","Position","Strand"],inplace=True).copy())
 
-    df = pd.DataFrame(list_return)
-    df.sort_values(["Fasta_ID","Position","Strand"],inplace=True)
-    df.to_csv(os.path.realpath(csvout),index=False)
+    del list_return
+    gc.collect()
+
+def compute_fasta_to_csv(modelname,fastafile,csv_out,show_progress_bar=False,nproc=1):
+    fasta = load_fasta(os.path.realpath(fastafile))
+    iterator = [contig_name for contig_name in fasta]
+    logging.info("[INFO] Using {} CPUs".format(nproc))
+
+    logging.debug('[DEBUG] (compute_fasta_to_csv) Creating the manager queue')
+    manager = mp.Manager()
+    queue = manager.Queue()
+
+    logging.debug('[DEBUG] (compute_fasta_to_csv) Launching the writer_process')
+    writer_process = mp.Process(target=result_writer, args=(queue, (os.path.realpath(csv_out))))
+    writer_process.start()  # This will write every worker's result that has been pushed in the queue
+
+    logging.debug('[DEBUG] (compute_fasta_to_csv) Waiting for the workers to be done')
+
+    Parallel(n_jobs=nproc)(
+        delayed(parallelized_function)(contig_name, fastafile, modelname, queue, show_progress_bar) for contig_name in iterator)
+
+    ################################################
+    # END OF THE ANALYSIS / WAITING FOR THE WRITER #
+    ################################################
+
+    logging.info('[INFO] (true_smrt) Analysis done. Waiting for the writer_process to be done')
+    queue.put("Poison")  # Poisoning the end of the queue
+    writer_process.join()  # Waiting writer_process to reach the poison
+    logging.info('[INFO] (true_smrt) Analysis DONE and saved')  # You're welcome
+
+    logging.info('[INFO] (true_smrt) The whole analysis is done, thank you for chosing our company')
 
 class Str2IPD():
-    def __init__(self,sequence,name="NO_ID",model="SP2-C2"):
-        self.sequence = [Contig(name,sequence)]
+    def __init__(self, sequence, name="NO_ID", model="SP2-C2"):
+        self.sequence = [Contig(name, sequence)]
         for x in self.sequence:
             x.cmph5ID = x.id
-        self.model = IpdModel(self.sequence,modelFile=transform_model_name(model))
+        self.model = IpdModel(self.sequence, modelFile=transform_model_name(model))
         self.predictfunc = self.model.predictIpdFuncModel(refId=name)
-    def predict(self,position,strand=0):
-        return self.predictfunc(position,strand)
+
+    def predict(self, position, strand=0):
+        return self.predictfunc(position, strand)
+
 
 class batchStr2IPD():
-    def __init__(self,sequences=[],names=[],model="SP2-C2"):
-        self.sequences = [Contig(name,sequence) for (x,y) in zip(sequences,names)]
+    def __init__(self, sequences=[], names=[], model="SP2-C2"):
+        self.sequences = [Contig(name, sequence) for (name, sequence) in zip(sequences, names)]
         for x in self.sequences:
             x.cmph5ID = x.id
-        self.model = IpdModel(self.sequences,modelFile=transform_model_name(model))
-        self.predictfunc = {x:self.model.predictIpdFuncModel(refId=name) for x in names}
-    def predict(self,sequence,position,strand=0):
-        return self.predictfunc[sequence](position,strand)
+
+        self.model = IpdModel(self.sequences, modelFile=transform_model_name(model))
+        self.predictfunc = {x: self.model.predictIpdFuncModel(refId=name) for name in names}
+
+    def predict(self, sequence, position, strand=0):
+        return self.predictfunc[sequence](position, strand)
 
 
 def transform_model_name(modelname):
     resources_dir = _getAbsPath("/resources/")
-    modifiedmodelname = modelname+".h5"
-    modelname = os.path.join(resources_dir,modifiedmodelname)
+    modifiedmodelname = modelname + ".h5"
+    modelname = os.path.join(resources_dir, modifiedmodelname)
     return modelname
+
 
 def load_fasta(fastafile):
     """Returns a python dict { id : sequence } for the given .fasta file"""
     with open(os.path.realpath(fastafile), 'r') as filin:
         fasta = filin.read()
         fasta = fasta.split('>')[1:]
-        outputdict = { x.split('\n')[0].strip() : "".join(x.split('\n')[1:]) for x in fasta}
+        outputdict = {x.split('\n')[0].strip(): "".join(x.split('\n')[1:]) for x in fasta}
     return outputdict
 
+
 class Contig():
-    def __init__(self,id,seq):
+    def __init__(self, id, seq):
         self.id = id
         self.ID = id
         self.sequence = seq
+
 
 def loadReferenceContigs(referencePath):
     """
@@ -156,7 +230,7 @@ def loadReferenceContigs(referencePath):
     """
 
     fasta_parsed = load_fasta(os.path.realpath(referencePath))
-    contigs = [Contig(x,fasta_parsed[x]) for x in fasta_parsed.keys()]
+    contigs = [Contig(x, fasta_parsed[x]) for x in fasta_parsed.keys()]
 
     # Read contigs from FASTA file (or XML dataset)
     # refReader = ReferenceSet(referencePath)
@@ -176,8 +250,8 @@ def loadReferenceContigs(referencePath):
 
     return contigs
 
-class SharedArray:
 
+class SharedArray:
     """
     Very simple wrapper for a chunk of shared memory that can be accessed across processes
     """
@@ -195,10 +269,10 @@ class SharedArray:
 
 
 def _getAbsPath(fname):
-    return resource_filename(Requirement.parse('ipdtools'),'ipdtools/%s' % fname)
+    return resource_filename(Requirement.parse('ipdtools'), 'ipdtools/%s' % fname)
+
 
 class GbmContextModel(object):
-
     """
     Class for computing ipd predictions on contexts. Evaluate the GBM tree model for a list of contexts
     Contexts may contain arbitrary combinations of modified bases
@@ -218,8 +292,10 @@ class GbmContextModel(object):
         self.varNames = [x.decode('ASCII') for x in ds("VarNames")]
         # print("self.varNames2",self.varNames)
 
-        self.modFeatureIdx = dict((int(self.varNames[x][1:]), x) for x in range(len(self.varNames)) if self.varNames[x][0] == 'M')
-        self.canonicalFeatureIdx = dict((int(self.varNames[x][1:]), x) for x in range(len(self.varNames)) if self.varNames[x][0] == 'R')
+        self.modFeatureIdx = dict(
+            (int(self.varNames[x][1:]), x) for x in range(len(self.varNames)) if self.varNames[x][0] == 'M')
+        self.canonicalFeatureIdx = dict(
+            (int(self.varNames[x][1:]), x) for x in range(len(self.varNames)) if self.varNames[x][0] == 'R')
 
         # print("self.modFeatureIdx: {}".format(self.modFeatureIdx))
         # print("self.canonicalFeatureIdx",self.canonicalFeatureIdx)
@@ -287,12 +363,10 @@ class GbmContextModel(object):
         Needs to be invoked lazily because the native function pointer cannot be pickled
         """
 
-
-        DLL_PATH = os.path.dirname(os.path.dirname(__file__)+"/ipdtools/")
+        DLL_PATH = os.path.dirname(os.path.dirname(__file__) + "/ipdtools/")
         # print("******************"+DLL_PATH+"******************")
 
         self._lib = np.ctypeslib.load_library("tree_predict", DLL_PATH)
-
 
         lpb = self._lib
 
@@ -406,8 +480,6 @@ class GbmContextModel(object):
         n = len(ctxStrings)
 
         if nTrees is None:
-
-
             nTrees = self.nTrees
 
         packCol = np.zeros(n, dtype=np.uint64)
@@ -458,7 +530,6 @@ class GbmContextModel(object):
 
 
 class IpdModel:
-
     """
     Predicts the IPD of an any context, possibly containing multiple modifications.
     We use a 4^12 entry LUT to get the predictions for contexts without modifications,
@@ -535,7 +606,7 @@ class IpdModel:
         nullModelDataset = nullModelGroup["KineticValues"]
 
         # assert that the dataset is a uint8
-        assert(nullModelDataset.dtype == uint8)
+        assert (nullModelDataset.dtype == uint8)
 
         # Construct a 'shared array' (a numpy wrapper around some shared memory
         # Read the LUT into this table
