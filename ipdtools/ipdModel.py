@@ -47,7 +47,6 @@ import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
-from joblib import Parallel, delayed
 import time
 
 byte = np.dtype('byte')
@@ -80,34 +79,31 @@ baseToCanonicalCode = {'N': 0, 'A': 0, 'C': 1, 'G': 2, 'T': 3, 'H': 0, 'I': 1, '
 
 codeToBase = dict([(y, x) for (x, y) in list(baseToCode.items())])
 
+def compute_fasta_to_csv(modelname,fastafile,csvout,show_progress_bar=False):
+    path_to_model = transform_model_name(modelname)
+    cpl = {"A":"T","T":"A","C":"G","G":"C","N":"N"}
 
-def parallelized_function(contig_name,fastafile,modelname):
-    fastaRecords = loadReferenceContigs(os.path.realpath(fastafile)) ### Not optimal to do it each time here
-    # But the object "model" cannot be pickled so it has to be done this way
+    fastaRecords = loadReferenceContigs(os.path.realpath(fastafile))
     model = IpdModel(fastaRecords,modelFile=transform_model_name(modelname))
 
-    fasta = load_fasta(os.path.realpath(fastafile)) # Same
-    seq = fasta[contig_name]
-    predictfunc = model.predictIpdFuncModel(refId=contig_name)
-
-    iterator = range(len(seq))
-    for i in iterator:  # Progress bar will be shown only if specified
-        prediction_strand0 = int(predictfunc(i, 0))
-        prediction_strand1 = int(predictfunc(i, 1))
-        list_return.append({"Fasta_ID": contig_name, "Position": i, "Strand": 0, "Nucleotide": str(seq[i]),
-                            "Prediction": float(prediction_strand0)})
-        list_return.append({"Fasta_ID": contig_name, "Position": i, "Strand": 1, "Nucleotide": str(cpl[seq[i]]),
-                            "Prediction": float(prediction_strand1)})
-        return pd.DataFrame(list_return)
-
-def compute_fasta_to_csv(modelname,fastafile,csvout,show_progress_bar=False,nproc=1):
     fasta = load_fasta(os.path.realpath(fastafile))
-    iterator = [contig_name for contig_name in fasta]
-    if show_progress_bar:
-        iterator = tqdm(iterator)
 
-    results = Parallel(n_jobs=nproc)(delayed(parallelized_function)(contig_name,fastafile,modelname) for contig_name in iterator)
-    df = pd.concat(results,ignore_index=True)
+    list_return = []
+    for contig_name in fasta:
+        seq = fasta[contig_name]
+        predictfunc = model.predictIpdFuncModel(refId=contig_name)
+
+        iterator = range(len(seq))
+        if show_progress_bar:
+            iterator = tqdm(iterator)
+
+        for i in iterator: # Progress bar will be shown only if specified
+            prediction_strand0 = predictfunc(i,0)
+            prediction_strand1 = predictfunc(i,1)
+            list_return.append({"Fasta_ID": contig_name,"Position":i,"Strand":0,"Nucleotide":seq[i],"Prediction":prediction_strand0})
+            list_return.append({"Fasta_ID": contig_name,"Position":i,"Strand":1,"Nucleotide":cpl[seq[i]],"Prediction":prediction_strand1})
+
+    df = pd.DataFrame(list_return)
     df.sort_values(["Fasta_ID","Position","Strand"],inplace=True)
     df.to_csv(os.path.realpath(csvout),index=False)
 
