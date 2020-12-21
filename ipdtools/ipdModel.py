@@ -150,8 +150,8 @@ def parallelized_function(contig_name,fastafile,modelname,queue):
     iterator = range(len(seq))
 
     for i in iterator:  # Progress bar will be shown only if specified
-        prediction_strand0 = int(predictfunc(i, 0))
-        prediction_strand1 = int(predictfunc(i, 1))
+        prediction_strand0 = float(predictfunc(i, 0))
+        prediction_strand1 = float(predictfunc(i, 1))
         list_return.append({"Fasta_ID": contig_name, "Position": i, "Strand": 0, "Nucleotide": str(seq[i]),
                             "Prediction": float(prediction_strand0)})
         list_return.append({"Fasta_ID": contig_name, "Position": i, "Strand": 1, "Nucleotide": str(cpl[seq[i]]),
