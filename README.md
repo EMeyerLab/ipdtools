@@ -43,6 +43,8 @@ git clone https://github.com/GDelevoye/ipdtools.git
 pip install ./ipdtools
 ```
 
+Please note that, due to the fact we're compiling a third-party dependency, the "editable" pip install will not be available. Do not use pip install -e ./ipdtools
+
 # Usage
 
 ## Command-line interface (CLI)
