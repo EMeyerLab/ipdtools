@@ -16,19 +16,13 @@ setup(
                            extra_compile_args=["-O3", "-shared", "-std=c99"],
                            export_symbols=["innerPredict", "innerPredictCtx", "init_native"])],
     install_requires=[
-<<<<<<< HEAD
         'numpy',
-<<<<<<< HEAD
         'joblib',
         'h5py',
         'pandas',
-        'tqdm'
-=======
-        'h5py'
->>>>>>> b6e21a4aaaa0ef13ab9a91a1cd3aa9212faa39c2
-=======
+        'tqdm',
+        'h5py',
         'numpy'
->>>>>>> parent of b6e21a4... Update setup.py
     ],
     entry_points={'console_scripts': [
         "ipdtools = ipdtools.launchers.ipdtools_launcher:main",
