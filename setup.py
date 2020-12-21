@@ -17,10 +17,14 @@ setup(
                            export_symbols=["innerPredict", "innerPredictCtx", "init_native"])],
     install_requires=[
         'numpy',
+<<<<<<< HEAD
         'joblib',
         'h5py',
         'pandas',
         'tqdm'
+=======
+        'h5py'
+>>>>>>> b6e21a4aaaa0ef13ab9a91a1cd3aa9212faa39c2
     ],
     entry_points={'console_scripts': [
         "ipdtools = ipdtools.launchers.ipdtools_launcher:main",

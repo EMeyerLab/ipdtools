@@ -32,6 +32,8 @@ NB: Methylated DNA is harder to predict because it often involves a mixture of m
 
 - Any C/C++ compiler correctly installed
 
+> Works well on Ubuntu 18.04 LTS x86. Should'nt work on MacOS or Windows (A dynamical library will be missing)
+
 # Installation
 
 ipdtools can be installed with **pip**, which is automatically distributed with any version of python
@@ -116,7 +118,7 @@ ipdtools can be used in python to predict from a fasta file
 import ipdtools
 
 fasta = ipdtools.ipdModel.loadReferenceContigs('test.fasta')
-model = ipdtools.ipdModel.IpdModel(fastaRecords,modelname="SP2-C2")
+model = ipdtools.ipdModel.IpdModel(fasta,modelname="SP2-C2")
 
 position = 15
 strand = 0
