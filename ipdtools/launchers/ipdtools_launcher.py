@@ -10,6 +10,11 @@ def main():
 
     parser = argparse.ArgumentParser()
 
+    def check_positive(value):
+        ivalue = int(value)
+        if ivalue <= 0:
+            raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
+        return ivalue
 
     parser.add_argument("--model","-m",
                             help='Choose the model for IPD prediction. See the README of package for more info. DEFAULT: SP2-C2',
@@ -32,6 +37,13 @@ def main():
                             default="WARNING",
                             choices=["DEBUG", "INFO", "WARNING", "ERROR, CRITICAL"])
 
+    parser.add_argument('--nproc','-n',
+                        help="Max number of processors for parallelism. DEFAULT: 1",
+                        required=False,
+                        default=1,
+                        type=check_positive)
+
+
     args = parser.parse_args()
 
     fastafile = os.path.realpath(args.fastafile)
@@ -45,7 +57,7 @@ def main():
     if args.verbosity in ["DEBUG","INFO"]:
         show_progress_bar = True
 
-    ipdtools.ipdModel.compute_fasta_to_csv(modelname=args.model,fastafile=fastafile,csvout=output_csv,show_progress_bar=show_progress_bar)
+    ipdtools.ipdModel.compute_fasta_to_csv(modelname=args.model,fastafile=fastafile,csvout=output_csv,show_progress_bar=show_progress_bar,nproc=args.nproc)
 
 if __name__ == "__main__":
     main()
