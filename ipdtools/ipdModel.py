@@ -80,7 +80,6 @@ baseToCanonicalCode = {'N': 0, 'A': 0, 'C': 1, 'G': 2, 'T': 3, 'H': 0, 'I': 1, '
 
 codeToBase = dict([(y, x) for (x, y) in list(baseToCode.items())])
 
-
 def result_writer(queue, fileOut):
     """ Will be launched as an independant process, writing every that will work until it reads 'poison' on the queue. After it's done, he will close the files"""
 
@@ -110,9 +109,29 @@ def result_writer(queue, fileOut):
 
     return
 
-def parallelized_function(contig_name,fastafile,modelname,queue,show_progress_bar):
-    logging.info("[INFO] Caring about contig {}".format(contig_name))
+def dict_to_fasta(myDict, fastafile):
+    """ from a python dict {Identifier:sequence}, writes a fastafile"""
+    def divide_seq(seq, length = 60, sep = '\n'):
+        """From a full-length sequence, divides it in chunks of 60 letters (most frequent.fasta format)"""
+        return( str(sep).join([seq[x:x+int(length)] for x in range(0, len(seq), length)]))
+        # Tricky one liner --> Splits a sequence into chunks of size "length"
+    with open(os.path.realpath(fastafile), "w") as filout:
+        for key in myDict:
+            filout.write('>'+str(key)+'\n'+str(divide_seq(myDict[key]))+'\n')
 
+
+def parallelized_function(contig_name,fastafile,modelname,queue):
+
+    logging.debug('[DEBUG] Caring about contig : {}'.format(contig_name))
+    fasta = load_fasta(os.path.realpath(fastafile)) # Same
+    seq = fasta[contig_name]
+
+    # Creating a temporary fasta file (A bit dirty, but way quicker than having to rework the code completely)
+    tmp_fasta = "./tmp"+contig_name+".fasta"
+    dict_to_fasta({contig_name:seq}, tmp_fasta)
+    fastafile = tmp_fasta
+
+    
     logging.debug("[DEBUG] contig {}, Creating a model from FastaRecords".format(contig_name))
     fastaRecords = loadReferenceContigs(os.path.realpath(fastafile)) ### Not optimal to do it each time here
     # But the object "model" cannot be pickled so it has to be done this way
@@ -122,16 +141,13 @@ def parallelized_function(contig_name,fastafile,modelname,queue,show_progress_ba
     model = IpdModel(fastaRecords,modelFile=transform_model_name(modelname))
 
     logging.debug("[DEBUG] contig {}, Fetching the sequence".format(contig_name))
-    fasta = load_fasta(os.path.realpath(fastafile)) # Same
-    seq = fasta[contig_name]
+
+    logging.info("[INFO] Caring about contig {} of size {}".format(contig_name,len(seq)))
 
     predictfunc = model.predictIpdFuncModel(refId=contig_name)
 
     list_return = []
     iterator = range(len(seq))
-
-    if show_progress_bar:
-        iterator = tqdm(iterator)
 
     for i in iterator:  # Progress bar will be shown only if specified
         prediction_strand0 = int(predictfunc(i, 0))
@@ -140,14 +156,19 @@ def parallelized_function(contig_name,fastafile,modelname,queue,show_progress_ba
                             "Prediction": float(prediction_strand0)})
         list_return.append({"Fasta_ID": contig_name, "Position": i, "Strand": 1, "Nucleotide": str(cpl[seq[i]]),
                             "Prediction": float(prediction_strand1)})
-    queue.put(pd.DataFrame(list_return).sort_values(["Fasta_ID","Position","Strand"],inplace=True).copy())
+    queue.put(pd.DataFrame(list_return).sort_values(["Fasta_ID","Position","Strand"]).copy())
 
+    os.system("rm "+os.path.realpath(tmp_fasta))
     del list_return
     gc.collect()
 
 def compute_fasta_to_csv(modelname,fastafile,csv_out,show_progress_bar=False,nproc=1):
     fasta = load_fasta(os.path.realpath(fastafile))
-    iterator = [contig_name for contig_name in fasta]
+
+    contig_names = [contig_name for contig_name in fasta]
+    if show_progress_bar:
+        contig_names = tqdm(contig_names)
+
     logging.info("[INFO] Using {} CPUs".format(nproc))
 
     logging.debug('[DEBUG] (compute_fasta_to_csv) Creating the manager queue')
@@ -160,19 +181,20 @@ def compute_fasta_to_csv(modelname,fastafile,csv_out,show_progress_bar=False,npr
 
     logging.debug('[DEBUG] (compute_fasta_to_csv) Waiting for the workers to be done')
 
+
     Parallel(n_jobs=nproc)(
-        delayed(parallelized_function)(contig_name, fastafile, modelname, queue, show_progress_bar) for contig_name in iterator)
+        delayed(parallelized_function)(contig_name, fastafile, modelname, queue) for contig_name in contig_names)
 
     ################################################
     # END OF THE ANALYSIS / WAITING FOR THE WRITER #
     ################################################
 
-    logging.info('[INFO] (true_smrt) Analysis done. Waiting for the writer_process to be done')
+    logging.info('[INFO] (compute_fasta_to_csv) Analysis done. Waiting for the writer_process to be done')
     queue.put("Poison")  # Poisoning the end of the queue
     writer_process.join()  # Waiting writer_process to reach the poison
-    logging.info('[INFO] (true_smrt) Analysis DONE and saved')  # You're welcome
+    logging.info('[INFO] (compute_fasta_to_csv) Analysis DONE and saved')  # You're welcome
 
-    logging.info('[INFO] (true_smrt) The whole analysis is done, thank you for chosing our company')
+    logging.info('[INFO] (compute_fasta_to_csv) The whole analysis is done, thank you for chosing our company')
 
 class Str2IPD():
     def __init__(self, sequence, name="NO_ID", model="SP2-C2"):
@@ -363,7 +385,7 @@ class GbmContextModel(object):
         Needs to be invoked lazily because the native function pointer cannot be pickled
         """
 
-        DLL_PATH = os.path.dirname(os.path.dirname(__file__) + "/ipdtools/")
+        DLL_PATH = os.path.dirname(os.path.dirname(__file__) + "/ipdtools/ipdtools")
         # print("******************"+DLL_PATH+"******************")
 
         self._lib = np.ctypeslib.load_library("tree_predict", DLL_PATH)
