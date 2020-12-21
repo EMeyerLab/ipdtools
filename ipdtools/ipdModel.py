@@ -158,7 +158,7 @@ def parallelized_function(contig_name,fastafile,modelname,queue):
                             "Prediction": float(prediction_strand1)})
     queue.put(pd.DataFrame(list_return).sort_values(["Fasta_ID","Position","Strand"]).copy())
 
-    os.system("rm "+os.path.realpath(tmp_fasta))
+    os.system("rm -f "+os.path.realpath(tmp_fasta))
     del list_return
     gc.collect()
 
