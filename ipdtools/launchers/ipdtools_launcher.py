@@ -38,7 +38,7 @@ def main():
                             choices=["DEBUG", "INFO", "WARNING", "ERROR, CRITICAL"])
 
     parser.add_argument('--nproc','-n',
-                        help="Max number of processors for parallelism. DEFAULT: 1",
+                        help="Max number of processors for parallelism. DEFAULT: 1 [NOT IMPLEMENTED YET]",
                         required=False,
                         default=1,
                         type=check_positive)

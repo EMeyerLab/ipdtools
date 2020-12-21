@@ -79,7 +79,7 @@ baseToCanonicalCode = {'N': 0, 'A': 0, 'C': 1, 'G': 2, 'T': 3, 'H': 0, 'I': 1, '
 
 codeToBase = dict([(y, x) for (x, y) in list(baseToCode.items())])
 
-def compute_fasta_to_csv(modelname,fastafile,csvout,show_progress_bar=False):
+def compute_fasta_to_csv(modelname,fastafile,csvout,show_progress_bar=False,nproc=1):
     path_to_model = transform_model_name(modelname)
     cpl = {"A":"T","T":"A","C":"G","G":"C","N":"N"}
 
