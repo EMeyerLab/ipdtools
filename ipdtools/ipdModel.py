@@ -43,12 +43,12 @@ import warnings
 import numpy as np
 
 import pandas as pd
-from tqdm import tqdm
 from joblib import Parallel, delayed
-
 import multiprocessing as mp
+from tqdm import tqdm
 
 import gc # Garbage Collector
+import sys
 
 byte = np.dtype('byte')
 float32 = np.dtype('float32')
@@ -89,8 +89,9 @@ def result_writer(queue, fileOut, length, show_progress_bar):
     logging.debug('[DEBUG] (result_writer) result_writer is ready to write (destination = {})'.format(fileOut))
     logging.info("[INFO] Number of nucleotides to handle : {}".format(str(length)))
 
+
     if show_progress_bar:
-        progress_bar = tqdm(range(length),total=length)
+        progress_bar = tqdm(range(length),total=length,desc="Nucleotides")
 
 
     while True:  # Continuously listens to the queue
@@ -109,10 +110,11 @@ def result_writer(queue, fileOut, length, show_progress_bar):
             else:
                 list_df.append(to_write.copy())
                 if show_progress_bar:
-                    for i in range(len(to_write)):
-                        progress_bar.update(1)
+                        progress_bar.update(len(to_write)//2) # Don't forget //2 because we have two strands
 
-    logging.debug('[INFO] Result saved at {}'.format(os.path.realpath(fileOut)))
+    sys.stdout.flush()
+    logging.info('[INFO] Result saved at {}'.format(os.path.realpath(fileOut)))
+    sys.stdout.flush()
 
     return
 
@@ -149,7 +151,7 @@ def parallelized_function(contig_name,fastafile,modelname,queue,indexing):
 
     logging.debug("[DEBUG] contig {}, Fetching the sequence".format(contig_name))
 
-    logging.info("[INFO] Caring about contig {} of size {}".format(contig_name,len(seq)))
+    logging.debug("[DEBUG] Caring about contig {} of size {}".format(contig_name,len(seq)))
 
     predictfunc = model.predictIpdFuncModel(refId=contig_name)
 
@@ -204,7 +206,7 @@ def compute_fasta_to_csv(modelname, fastafile, csv_out, show_progress_bar=False,
     writer_process.join()  # Waiting writer_process to reach the poison
     #logging.info('[INFO] (compute_fasta_to_csv) Analysis DONE and saved')  # You're welcome
 
-    logging.info('[INFO] ipdtools ended')
+    logging.info('[INFO] DONE')
 
 class Str2IPD():
     def __init__(self, sequence, name="NO_ID", model="SP2-C2",indexing=1):

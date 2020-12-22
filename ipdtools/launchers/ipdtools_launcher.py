@@ -17,7 +17,7 @@ def main():
         return ivalue
 
     parser.add_argument("--model","-m",
-                            help='Choose the model for IPD prediction. See the README of package for more info. DEFAULT: SP2-C2',
+                            help='Choose the model for IPD prediction. See the package\'s README for more info. DEFAULT: SP2-C2 (PacBio Sequel I)',
                             required=False,
                             choices=["SP2-C2","C2","P4-C2","P5-C3","P6-C4","XL-C2","XL-XL"],
                             default="SP2-C2")
@@ -28,7 +28,7 @@ def main():
                             default=None)
 
     parser.add_argument('--output_csv',"-o",
-                            help='Output CSV file of predicted IPDs.',
+                            help='Output CSV file of predicted IPDs. See the README for further details on the output.',
                             required=True)
 
     parser.add_argument('--verbosity',"-v",
@@ -42,19 +42,17 @@ def main():
                             action='store_true')
 
     parser.add_argument('--nproc','-n',
-                        help="Max number of processors for parallelism. DEFAULT: 1 [NOT IMPLEMENTED YET]",
+                        help="Max number of processors for parallelism. DEFAULT: 1, positive integers only. Rq: The programm will actually use n+1 >= 2 CPU no matter what.",
                         required=False,
                         default=1,
                         type=check_positive)
 
     parser.add_argument('--indexing','-i',
-                        help="Is the indexing corresponding to the .fasta reference 1-based (default PacBio) or 0-based",
+                        help="Is the indexing corresponding to the .fasta reference 1-based (default PacBio) or 0-based. DEFAULT: 1",
                         required=False,
                         default=1,
                         type=int,
                         choices=[0,1])
-
-
 
     args = parser.parse_args()
 
@@ -62,8 +60,10 @@ def main():
     output_csv = os.path.realpath(args.output_csv)
 
     verboselevel = "logging."+str(args.verbosity)
-    logging.basicConfig(stream=sys.stdout, level=eval(verboselevel),
-                        format='%(asctime)s %(message)s')
+    logging.basicConfig(level=eval(verboselevel),
+                        format='%(asctime)s %(message)s',
+                        stream=sys.stdout)
+
 
     show_progress_bar = False
     if args.progress_bar:

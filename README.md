@@ -32,7 +32,9 @@ NB: Methylated DNA is harder to predict because it often involves a mixture of m
 
 - Any C/C++ compiler correctly installed
 
-> Works well on Ubuntu 18.04 LTS x86. Should'nt work on MacOS or Windows (A dynamical library will be missing)
+> Works well on Ubuntu 18.04 LTS x86. 
+> 
+> Hasn't been tested on either Windows or macOS (especially not the last ARM-based versions of MacOS)
 
 # Installation
 
@@ -46,6 +48,15 @@ pip install ./ipdtools
 Please note that, due to the fact we're compiling a third-party dependency, the "editable" pip install will not be available. Do not use pip install -e ./ipdtools
 
 # Usage
+
+```console
+(base) user@computer:~/ipdtools/resources$ ipdtools -f test.fasta -o test.csv -p -n 6 --model P6-C4 --verbosity INFO
+2020-12-22 15:14:29,067 [INFO] Using 6 CPUs
+2020-12-22 15:14:29,079 [INFO] Number of nucleotides to handle : 463
+Nucleotides: 100%|███████████████████████████████| 463/463 [00:10<00:00, 39.59it/s]
+2020-12-22 15:14:39,145 [INFO] Result saved at /export/home1/users/gmc/delevoye/Github/ipdtools/ipdtools/resources/test.csv
+2020-12-22 15:14:39,148 [INFO] DONE
+```
 
 ## Command-line interface (CLI)
 
@@ -65,7 +76,8 @@ Detailed Usage
 user@computer$:ipdtools --help
 usage: ipdtools [-h] [--model {SP2-C2,C2,P4-C2,P5-C3,P6-C4,XL-C2,XL-XL}]
                 --fastafile FASTAFILE --output_csv OUTPUT_CSV
-                [--verbosity {DEBUG,INFO,WARNING,ERROR, CRITICAL}]
+                [--verbosity {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+                [--progress_bar] [--nproc NPROC] [--indexing {0,1}]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -76,23 +88,23 @@ optional arguments:
                         Path to a fasta file.
   --output_csv OUTPUT_CSV, -o OUTPUT_CSV
                         Output CSV file of predicted IPDs.
-  --verbosity {DEBUG,INFO,WARNING,ERROR, CRITICAL}, -v {DEBUG,INFO,WARNING,ERROR, CRITICAL}
-```
-
-> RQ: If verbosity is DEBUG or INFO, the program will show a tqdm progress bar
-
-```console
-
-```(py2) user@computer:~/ipdtools/ipdtools/resources$ ipdtools -f test.fasta -o test.csv -v DEBUG
-100%|██████████| 93/93 [00:00<00:00, 2954.90it/s]
-100%|██████████| 92/92 [00:00<00:00, 2890.54it/s]
-100%|██████████| 92/92 [00:00<00:00, 2919.34it/s]
-100%|██████████| 93/93 [00:00<00:00, 2937.36it/s]
-100%|██████████| 93/93 [00:00<00:00, 2935.88it/s]
+  --verbosity {DEBUG,INFO,WARNING,ERROR,CRITICAL}, -v {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        Choose your verbosity. Default: INFO
+  --progress_bar, -p    Displays a progress bar
+  --nproc NPROC, -n NPROC
+                        Max number of processors for parallelism. DEFAULT: 1,
+                        positive integers only. Rq: The programm will actually
+                        use n+1 >= 2 CPU no matter what.
+  --indexing {0,1}, -i {0,1}
+                        Is the indexing corresponding to the .fasta reference
+                        1-based (default PacBio) or 0-based
 ```
 
 ### Output .csv header
 
+The output will be a .csv file like this one:
+
+```
 Fasta_ID | Position | Strand | Nucleotide | Prediction
 :-: |:-: | :-: | :-: | :-: |
 [CONTIG] | 0 | `0` | A | xxxx
@@ -105,8 +117,11 @@ Fasta_ID | Position | Strand | Nucleotide | Prediction
 [CONTIG] | 3 | `1` | C | xxxx
 [CONTIG] | 4 | `0` | A | xxxx
 [CONTIG] | 4 | `1` | T | xxxx
+```
 
-> The csv is sorted (in order) by:
+Of course, depending on using a 0-based or 1-based indexing, the columns will vary.
+
+> The csv is sorted (in ascending order) by:
 > * Fasta_ID
 > * Position
 > * Strand
@@ -116,24 +131,11 @@ Fasta_ID | Position | Strand | Nucleotide | Prediction
 ipdtools can be used in python to predict from a fasta file
 
 
-```python
-import ipdtools
-
-fasta = ipdtools.ipdModel.loadReferenceContigs('test.fasta')
-model = ipdtools.ipdModel.IpdModel(fasta,modelname="SP2-C2")
-
-position = 15
-strand = 0
-
-prediction = model.predictIpdFunc(identifier="seq0")(position,strand)
-print(prediction)
-```
-
 it can also be used to predict directly from a python string with **Str2IPD**:
 
 ```python
 >>> import ipdtools
->>> predictor = ipdtools.ipdModel.Str2IPD("ATGCTAGCTTTTTGNCTGATTAGCTGA",model="SP2-C2") # Default model is SP2-C2
+>>> predictor = ipdtools.ipdModel.Str2IPD("ATGCTAGCTTTTTGNCTGATTAGCTGA",model="SP2-C2",indexing=0) # Default model is SP2-C2
 >>> predictor.predict(position=0) # The default is strand0
 1.0641327
 >>> predictor.predict(position=0,strand=1)
@@ -164,19 +166,19 @@ Available models are:
 # Conventions used
 
 > **Important notes:**
-> - We are using **0-indexing**
+> - 0-based or 1-based indexing depends on the user's choice (PacBio uses 1-based so, our default is 0-based unless specified explicitely)
 > - Position N strand 0 refers to the Nth position in the fasta
-> - **Strand 0 is the fasta file**. Strand 1 is the complementary
-> - Position is **alswyas** expressed **from the strand0 point of view**. We don't care about 5'-3'.
+> - **Strand 0 is the fasta reference sequence**. Strand 1 is the complementary
+> - Position is **alswyas** expressed **from the strand0/fasta reference point of view**. We don't care about 5'-3'.
 
-E.g
+E.g, if we use 0-based indexing (not the default one) then,
 
 Given this fasta sequence :
 
 ```console
 "ATGCTT"
 ```
-We then have in real :
+The DNA molecule could be pictured this way :
 
 <pre>
 position                               012345
@@ -186,12 +188,12 @@ strand1                             3' TACGAA 5'
 position                               012345
 </pre>
 
-e.g
+Which implies, for instance that:
 
 - Prediction of position=2 and strand = 1 will be the prediction at position 2 on the complementary strand: "C"
 - Prediction of position=2 and strand = 0 will be the prediction at position 2 on read strand : "G"
 
-**Here is a table for this exemple just to be sure:**
+**Here is a table for the output that will be produced from this exemple just to be sure:**
 
 For strand 0
 
