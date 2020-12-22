@@ -43,12 +43,12 @@ import warnings
 import numpy as np
 
 import pandas as pd
-from tqdm import tqdm
 from joblib import Parallel, delayed
-
 import multiprocessing as mp
+from tqdm import tqdm
 
 import gc # Garbage Collector
+import sys
 
 byte = np.dtype('byte')
 float32 = np.dtype('float32')
@@ -80,32 +80,41 @@ baseToCanonicalCode = {'N': 0, 'A': 0, 'C': 1, 'G': 2, 'T': 3, 'H': 0, 'I': 1, '
 
 codeToBase = dict([(y, x) for (x, y) in list(baseToCode.items())])
 
-def result_writer(queue, fileOut):
+def result_writer(queue, fileOut, length, show_progress_bar):
     """ Will be launched as an independant process, writing every that will work until it reads 'poison' on the queue. After it's done, he will close the files"""
 
     os.system('mkdir -p '+str(os.path.dirname(fileOut)))
     list_df = []
 
     logging.debug('[DEBUG] (result_writer) result_writer is ready to write (destination = {})'.format(fileOut))
+    logging.info("[INFO] Number of nucleotides to handle : {}".format(str(length)))
+
+
+    if show_progress_bar:
+        progress_bar = tqdm(range(length),total=length,desc="Nucleotides")
+
 
     while True:  # Continuously listens to the queue
         if not queue.empty():  # most of the time it will be empty
             to_write = queue.get() # This is a pandas DataFrame otherwise the word "poison" when we reached the end of analysis
 
             if not isinstance(to_write,pd.DataFrame):  # If the queue is poisoned
-                logging.debug('[DEBUG] (result_writer) Last line received, writer will end')
-                logging.debug('[DEBUG] (result_writer) WAIT FOR THE WRITER (don\'t interrupt otherwise all computed value will be lost)')
                 final_result = pd.concat(list_df, ignore_index = True)
+
                 with open(os.path.realpath(fileOut),"w") as myfile:
                     final_result.to_csv(myfile, sep = ';', index = False)
-                logging.debug('[DEBUG] (result_writer) Written in {}'.format(fileOut))
+                    #logging.debug('[DEBUG] (result_writer) Written in {}'.format(fileOut))
 
                 break
 
             else:
                 list_df.append(to_write.copy())
+                if show_progress_bar:
+                        progress_bar.update(len(to_write)//2) # Don't forget //2 because we have two strands
 
-    logging.debug('[DEBUG] (result_writer) Result saved here = {}'.format(os.path.realpath(fileOut)))
+    sys.stdout.flush()
+    logging.info('[INFO] Result saved at {}'.format(os.path.realpath(fileOut)))
+    sys.stdout.flush()
 
     return
 
@@ -120,7 +129,7 @@ def dict_to_fasta(myDict, fastafile):
             filout.write('>'+str(key)+'\n'+str(divide_seq(myDict[key]))+'\n')
 
 
-def parallelized_function(contig_name,fastafile,modelname,queue):
+def parallelized_function(contig_name,fastafile,modelname,queue,indexing):
 
     logging.debug('[DEBUG] Caring about contig : {}'.format(contig_name))
     fasta = load_fasta(os.path.realpath(fastafile)) # Same
@@ -142,32 +151,36 @@ def parallelized_function(contig_name,fastafile,modelname,queue):
 
     logging.debug("[DEBUG] contig {}, Fetching the sequence".format(contig_name))
 
-    logging.info("[INFO] Caring about contig {} of size {}".format(contig_name,len(seq)))
+    logging.debug("[DEBUG] Caring about contig {} of size {}".format(contig_name,len(seq)))
 
     predictfunc = model.predictIpdFuncModel(refId=contig_name)
 
     list_return = []
-    iterator = range(len(seq))
 
-    for i in iterator:  # Progress bar will be shown only if specified
-        prediction_strand0 = float(predictfunc(i, 0))
-        prediction_strand1 = float(predictfunc(i, 1))
+    for i in range(len(seq)):  # Progress bar will be shown only if specified
+        if indexing == 1:
+            prediction_strand0 = float(predictfunc(i+1, 0)) # Prise en compte de l'indexing 1-based par PacBio
+            prediction_strand1 = float(predictfunc(i+1, 1))
+        elif indexing == 0:
+            prediction_strand0 = float(predictfunc(i+1, 0)) # Prise en compte de l'indexing 1-based par PacBio
+            prediction_strand1 = float(predictfunc(i+1, 1))
         list_return.append({"Fasta_ID": contig_name, "Position": i, "Strand": 0, "Nucleotide": str(seq[i]),
                             "Prediction": float(prediction_strand0)})
         list_return.append({"Fasta_ID": contig_name, "Position": i, "Strand": 1, "Nucleotide": str(cpl[seq[i]]),
                             "Prediction": float(prediction_strand1)})
+
     queue.put(pd.DataFrame(list_return).sort_values(["Fasta_ID","Position","Strand"]).copy())
 
-    os.system("rm -f "+os.path.realpath(tmp_fasta))
+    os.remove(os.path.realpath(tmp_fasta))
     del list_return
     gc.collect()
 
-def compute_fasta_to_csv(modelname,fastafile,csv_out,show_progress_bar=False,nproc=1):
+def compute_fasta_to_csv(modelname, fastafile, csv_out, show_progress_bar=False, nproc=1,indexing=1):
     fasta = load_fasta(os.path.realpath(fastafile))
 
+    length = sum([len(fasta[x]) for x in fasta])
+
     contig_names = [contig_name for contig_name in fasta]
-    if show_progress_bar:
-        contig_names = tqdm(contig_names)
 
     logging.info("[INFO] Using {} CPUs".format(nproc))
 
@@ -176,36 +189,54 @@ def compute_fasta_to_csv(modelname,fastafile,csv_out,show_progress_bar=False,npr
     queue = manager.Queue()
 
     logging.debug('[DEBUG] (compute_fasta_to_csv) Launching the writer_process')
-    writer_process = mp.Process(target=result_writer, args=(queue, (os.path.realpath(csv_out))))
+    writer_process = mp.Process(target=result_writer, args=(queue,os.path.realpath(csv_out),length,show_progress_bar))
     writer_process.start()  # This will write every worker's result that has been pushed in the queue
 
     logging.debug('[DEBUG] (compute_fasta_to_csv) Waiting for the workers to be done')
 
 
     Parallel(n_jobs=nproc)(
-        delayed(parallelized_function)(contig_name, fastafile, modelname, queue) for contig_name in contig_names)
+        delayed(parallelized_function)(contig_name, fastafile, modelname, queue, indexing) for contig_name in contig_names)
 
     ################################################
     # END OF THE ANALYSIS / WAITING FOR THE WRITER #
     ################################################
 
-    logging.info('[INFO] (compute_fasta_to_csv) Analysis done. Waiting for the writer_process to be done')
     queue.put("Poison")  # Poisoning the end of the queue
     writer_process.join()  # Waiting writer_process to reach the poison
-    logging.info('[INFO] (compute_fasta_to_csv) Analysis DONE and saved')  # You're welcome
+    #logging.info('[INFO] (compute_fasta_to_csv) Analysis DONE and saved')  # You're welcome
 
-    logging.info('[INFO] (compute_fasta_to_csv) The whole analysis is done, thank you for chosing our company')
+    logging.info('[INFO] DONE')
 
 class Str2IPD():
-    def __init__(self, sequence, name="NO_ID", model="SP2-C2"):
+    def __init__(self, sequence, name="NO_ID", model="SP2-C2",indexing=1):
+        assert not any([character not in ["A","T","C","G","N","a","t","c","g","n"] for character in sequence])
+        assert indexing in [0,1]
+
+        self.indexing = indexing
+        assert sequence != None and sequence != "" and len(sequence) > 0
+        self.character_seq = sequence
+
         self.sequence = [Contig(name, sequence)]
         for x in self.sequence:
             x.cmph5ID = x.id
+
         self.model = IpdModel(self.sequence, modelFile=transform_model_name(model))
         self.predictfunc = self.model.predictIpdFuncModel(refId=name)
 
     def predict(self, position, strand=0):
-        return self.predictfunc(position, strand)
+        assert isinstance(position,int)
+        assert strand in [0,1]
+
+        if self.indexing == 1:
+            assert position >= 1
+            assert position+1 <= len(self.character_seq)
+            return self.predictfunc(position+1, strand)
+        elif self.indexing == 0:
+            assert position >= 0
+            assert position <= len(self.character_seq)
+            return self.predictfunc(position, strand)
+
 
 
 class batchStr2IPD():
