@@ -104,7 +104,6 @@ optional arguments:
 
 The output will be a .csv file like this one:
 
-```
 Fasta_ID | Position | Strand | Nucleotide | Prediction
 :-: |:-: | :-: | :-: | :-: |
 [CONTIG] | 0 | `0` | A | xxxx
@@ -117,7 +116,7 @@ Fasta_ID | Position | Strand | Nucleotide | Prediction
 [CONTIG] | 3 | `1` | C | xxxx
 [CONTIG] | 4 | `0` | A | xxxx
 [CONTIG] | 4 | `1` | T | xxxx
-```
+
 
 Of course, depending on using a 0-based or 1-based indexing, the columns will vary.
 
