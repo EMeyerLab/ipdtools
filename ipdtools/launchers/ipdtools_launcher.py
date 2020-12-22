@@ -37,6 +37,11 @@ def main():
                             default="WARNING",
                             choices=["DEBUG", "INFO", "WARNING", "ERROR, CRITICAL"])
 
+    parser.add_argument('--progress_bar',"-p",
+                            help='Displays a progress bar',
+                            action='store_true')
+
+
     parser.add_argument('--nproc','-n',
                         help="Max number of processors for parallelism. DEFAULT: 1 [NOT IMPLEMENTED YET]",
                         required=False,
@@ -54,7 +59,7 @@ def main():
                         format='%(asctime)s %(message)s')
 
     show_progress_bar = False
-    if args.verbosity in ["DEBUG","INFO"]:
+    if args.progress_bar:
         show_progress_bar = True
 
     ipdtools.ipdModel.compute_fasta_to_csv(modelname=args.model, fastafile=fastafile, csv_out=output_csv,
