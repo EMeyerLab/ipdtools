@@ -34,8 +34,8 @@ def main():
     parser.add_argument('--verbosity',"-v",
                             help='Choose your verbosity. Default: INFO',
                             required=False,
-                            default="WARNING",
-                            choices=["DEBUG", "INFO", "WARNING", "ERROR, CRITICAL"])
+                            default="INFO",
+                            choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
 
     parser.add_argument('--progress_bar',"-p",
                             help='Displays a progress bar',

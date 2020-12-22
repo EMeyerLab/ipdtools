@@ -86,35 +86,33 @@ def result_writer(queue, fileOut, length, show_progress_bar):
     os.system('mkdir -p '+str(os.path.dirname(fileOut)))
     list_df = []
 
-    if show_progress_bar:
-        iterator = tqdm([x for x in range(length)],total=len(length))
-
     logging.debug('[DEBUG] (result_writer) result_writer is ready to write (destination = {})'.format(fileOut))
+    logging.info("[INFO] Number of nucleotides to handle : {}".format(str(length)))
+
+    if show_progress_bar:
+        progress_bar = tqdm(range(length),total=length)
+
 
     while True:  # Continuously listens to the queue
         if not queue.empty():  # most of the time it will be empty
             to_write = queue.get() # This is a pandas DataFrame otherwise the word "poison" when we reached the end of analysis
 
             if not isinstance(to_write,pd.DataFrame):  # If the queue is poisoned
-
-                logging.debug('[DEBUG] (result_writer) Last line received, writer will end')
-                logging.debug('[DEBUG] (result_writer) WAIT FOR THE WRITER (don\'t interrupt otherwise all computed value will be lost)')
-
                 final_result = pd.concat(list_df, ignore_index = True)
 
                 with open(os.path.realpath(fileOut),"w") as myfile:
                     final_result.to_csv(myfile, sep = ';', index = False)
-                logging.debug('[DEBUG] (result_writer) Written in {}'.format(fileOut))
+                    #logging.debug('[DEBUG] (result_writer) Written in {}'.format(fileOut))
 
                 break
 
             else:
                 list_df.append(to_write.copy())
                 if show_progress_bar:
-                    for i in range(len(list_df)):
-                        next(iterator)
+                    for i in range(len(to_write)):
+                        progress_bar.update(1)
 
-    logging.debug('[DEBUG] (result_writer) Result saved here = {}'.format(os.path.realpath(fileOut)))
+    logging.debug('[INFO] Result saved at {}'.format(os.path.realpath(fileOut)))
 
     return
 
@@ -199,12 +197,11 @@ def compute_fasta_to_csv(modelname, fastafile, csv_out, show_progress_bar=False,
     # END OF THE ANALYSIS / WAITING FOR THE WRITER #
     ################################################
 
-    logging.info('[INFO] (compute_fasta_to_csv) Analysis done. Waiting for the writer_process to be done')
     queue.put("Poison")  # Poisoning the end of the queue
     writer_process.join()  # Waiting writer_process to reach the poison
-    logging.info('[INFO] (compute_fasta_to_csv) Analysis DONE and saved')  # You're welcome
+    #logging.info('[INFO] (compute_fasta_to_csv) Analysis DONE and saved')  # You're welcome
 
-    logging.info('[INFO] (compute_fasta_to_csv) The whole analysis is done, thank you for chosing our company')
+    logging.info('[INFO] ipdtools ended')
 
 class Str2IPD():
     def __init__(self, sequence, name="NO_ID", model="SP2-C2"):
