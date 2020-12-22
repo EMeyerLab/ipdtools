@@ -141,6 +141,8 @@ it can also be used to predict directly from a python string with **Str2IPD**:
 0.42285475
 ```
 
+**WARNING** : This feature is experimental. PacBio's model can produce outputs even for very incoherent parameters (like, "Strand 4, Position -1") without raising any error or warning. I tried to limit all those potential problems by putting additionnal assertions on the sequence, the strand and the position we ask (depending of course of the indexing system). All of this is implemented byt I havn't really had the time to test it yet.
+
 #  <a name="whichmodel"></a> Which model should I use ?
 
 Available models are:
