@@ -127,7 +127,7 @@ def dict_to_fasta(myDict, fastafile):
             filout.write('>'+str(key)+'\n'+str(divide_seq(myDict[key]))+'\n')
 
 
-def parallelized_function(contig_name,fastafile,modelname,queue):
+def parallelized_function(contig_name,fastafile,modelname,queue,indexing):
 
     logging.debug('[DEBUG] Caring about contig : {}'.format(contig_name))
     fasta = load_fasta(os.path.realpath(fastafile)) # Same
@@ -154,11 +154,14 @@ def parallelized_function(contig_name,fastafile,modelname,queue):
     predictfunc = model.predictIpdFuncModel(refId=contig_name)
 
     list_return = []
-    iterator = range(len(seq))
 
-    for i in iterator:  # Progress bar will be shown only if specified
-        prediction_strand0 = float(predictfunc(i+1, 0)) # Prise en compte de l'indexing 1-based par PacBio
-        prediction_strand1 = float(predictfunc(i+1, 1))
+    for i in range(len(seq)):  # Progress bar will be shown only if specified
+        if indexing == 1:
+            prediction_strand0 = float(predictfunc(i+1, 0)) # Prise en compte de l'indexing 1-based par PacBio
+            prediction_strand1 = float(predictfunc(i+1, 1))
+        elif indexing == 0:
+            prediction_strand0 = float(predictfunc(i+1, 0)) # Prise en compte de l'indexing 1-based par PacBio
+            prediction_strand1 = float(predictfunc(i+1, 1))
         list_return.append({"Fasta_ID": contig_name, "Position": i, "Strand": 0, "Nucleotide": str(seq[i]),
                             "Prediction": float(prediction_strand0)})
         list_return.append({"Fasta_ID": contig_name, "Position": i, "Strand": 1, "Nucleotide": str(cpl[seq[i]]),
@@ -170,7 +173,7 @@ def parallelized_function(contig_name,fastafile,modelname,queue):
     del list_return
     gc.collect()
 
-def compute_fasta_to_csv(modelname, fastafile, csv_out, show_progress_bar=False, nproc=1):
+def compute_fasta_to_csv(modelname, fastafile, csv_out, show_progress_bar=False, nproc=1,indexing=1):
     fasta = load_fasta(os.path.realpath(fastafile))
 
     length = sum([len(fasta[x]) for x in fasta])
@@ -191,7 +194,7 @@ def compute_fasta_to_csv(modelname, fastafile, csv_out, show_progress_bar=False,
 
 
     Parallel(n_jobs=nproc)(
-        delayed(parallelized_function)(contig_name, fastafile, modelname, queue) for contig_name in contig_names)
+        delayed(parallelized_function)(contig_name, fastafile, modelname, queue, indexing) for contig_name in contig_names)
 
     ################################################
     # END OF THE ANALYSIS / WAITING FOR THE WRITER #
@@ -204,15 +207,34 @@ def compute_fasta_to_csv(modelname, fastafile, csv_out, show_progress_bar=False,
     logging.info('[INFO] ipdtools ended')
 
 class Str2IPD():
-    def __init__(self, sequence, name="NO_ID", model="SP2-C2"):
+    def __init__(self, sequence, name="NO_ID", model="SP2-C2",indexing=1):
+        assert not any([character not in ["A","T","C","G","N","a","t","c","g","n"] for character in sequence])
+        assert indexing in [0,1]
+
+        self.indexing = indexing
+        assert sequence != None and sequence != "" and len(sequence) > 0
+        self.character_seq = sequence
+
         self.sequence = [Contig(name, sequence)]
         for x in self.sequence:
             x.cmph5ID = x.id
+
         self.model = IpdModel(self.sequence, modelFile=transform_model_name(model))
         self.predictfunc = self.model.predictIpdFuncModel(refId=name)
 
     def predict(self, position, strand=0):
-        return self.predictfunc(position, strand)
+        assert isinstance(position,int)
+        assert strand in [0,1]
+
+        if self.indexing == 1:
+            assert position >= 1
+            assert position+1 <= len(self.character_seq)
+            return self.predictfunc(position+1, strand)
+        elif self.indexing == 0:
+            assert position >= 0
+            assert position <= len(self.character_seq)
+            return self.predictfunc(position, strand)
+
 
 
 class batchStr2IPD():

@@ -41,12 +41,19 @@ def main():
                             help='Displays a progress bar',
                             action='store_true')
 
-
     parser.add_argument('--nproc','-n',
                         help="Max number of processors for parallelism. DEFAULT: 1 [NOT IMPLEMENTED YET]",
                         required=False,
                         default=1,
                         type=check_positive)
+
+    parser.add_argument('--indexing','-i',
+                        help="Is the indexing corresponding to the .fasta reference 1-based (default PacBio) or 0-based",
+                        required=False,
+                        default=1,
+                        type=int,
+                        choices=[0,1])
+
 
 
     args = parser.parse_args()
@@ -63,7 +70,7 @@ def main():
         show_progress_bar = True
 
     ipdtools.ipdModel.compute_fasta_to_csv(modelname=args.model, fastafile=fastafile, csv_out=output_csv,
-                                           show_progress_bar=show_progress_bar,nproc=args.nproc)
+                                           show_progress_bar=show_progress_bar,nproc=args.nproc,indexing=args.indexing)
 
 if __name__ == "__main__":
     main()
