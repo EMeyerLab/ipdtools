@@ -6,7 +6,7 @@ import sys
 
 setup(
     name='ipdtools',
-    version='0.1',
+    version='0.2',
     author='DELEVOYE Guillaume',
     license=open('LICENSES.txt').read(),
     packages=find_packages("."),
