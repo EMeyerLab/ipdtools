@@ -158,16 +158,15 @@ def parallelized_function(contig_name,fastafile,modelname,queue,indexing):
     list_return = []
 
     for i in range(len(seq)):  # Progress bar will be shown only if specified
+        prediction_strand0 = float(predictfunc(i, 0))  # Prise en compte de l'indexing 1-based par PacBio
+        prediction_strand1 = float(predictfunc(i, 1))
+
         if indexing == 1:
-            prediction_strand0 = float(predictfunc(i+1, 0)) # Prise en compte de l'indexing 1-based par PacBio
-            prediction_strand1 = float(predictfunc(i+1, 1))
             list_return.append({"Fasta_ID": contig_name, "Position": i+1, "Strand": 0, "Nucleotide": str(seq[i]),
                                 "Prediction": float(prediction_strand0)})
             list_return.append({"Fasta_ID": contig_name, "Position": i+1, "Strand": 1, "Nucleotide": str(cpl[seq[i]]),
                                 "Prediction": float(prediction_strand1)})
         elif indexing == 0:
-            prediction_strand0 = float(predictfunc(i+1, 0)) # Prise en compte de l'indexing 1-based par PacBio
-            prediction_strand1 = float(predictfunc(i+1, 1))
 
             list_return.append({"Fasta_ID": contig_name, "Position": i, "Strand": 0, "Nucleotide": str(seq[i]),
                                 "Prediction": float(prediction_strand0)})
