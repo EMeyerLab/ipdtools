@@ -34,7 +34,7 @@ NB: Methylated DNA is harder to predict because it often involves a mixture of m
 
 The program has only be tested in Ubuntu LTS 18 and 20 with pip and conda
 
-### With pip
+### With pip from PyPI
 
 ```console
 user@computer:$ pip install ipdtools
