@@ -30,26 +30,23 @@ As it is known that the polymerase's speed at a **nucleotide N** is influenced b
 NB: Methylated DNA is harder to predict because it often involves a mixture of many possible combinations of signals.
 
 
-# Requirements
-
-- Python >= 3.6
-
-- Any C/C++ compiler correctly installed
-
-> Works well on Ubuntu 18.04 LTS x86. 
-> 
-> Hasn't been tested on either Windows or macOS (especially not the last ARM-based versions of MacOS)
-
 # Installation
 
-ipdtools can be installed with **pip**, which is automatically distributed with any version of python
+The program has only be tested in Ubuntu LTS 18 and 20 with pip and conda
 
-```bash
-git clone https://github.com/GDelevoye/ipdtools.git
-pip install ./ipdtools
+### With pip
+
+```console
+user@computer:$ pip install ipdtools
 ```
 
-Please note that, due to the fact we're compiling a third-party dependency, the "editable" pip install will not be available. Do not use pip install -e ./ipdtools
+### With conda
+
+```console
+user@computer:$ conda install -c gdelevoye ipdtools 
+```
+
+Please note that, due to the fact we're compiling a third-party dependency, the "editable" pip install will not be available. Do not clone the repo and then use pip install -e ./ipdtools , it will probably fail or generate errors.
 
 # Usage
 
