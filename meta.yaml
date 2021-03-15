@@ -1,0 +1,48 @@
+{% set name = "ipdtools" %}
+{% set version = "0.22" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  url: "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+  sha256: 65fcd25128f7fc61d163bdadaed46b3fd6705108425fb3b008a56758e3cff137
+
+build:
+  number: 0
+  entry_points:
+    - ipdtools = ipdtools.launchers.ipdtools_launcher:main
+  script: "{{ PYTHON }} -m pip install . -vv"
+
+requirements:
+  host:
+    - pip
+    - python
+  run:
+    - python
+    - tqdm
+    - pandas
+    - numpy
+    - h5py
+    - joblib
+
+test:
+  imports:
+    - ipdtools
+    - ipdtools.launchers
+  commands:
+    - ipdtools --help
+
+about:
+  home: "https://github.com/GDelevoye/ipdtools"
+  license: UNKNOWN
+  license_family: OTHER
+  license_file: 
+  summary: "PacBio codes isolated and repackaged to work on their in-sillico model"
+  doc_url: "https://github.com/GDelevoye/ipdtools/blob/af68c835e1d92cf7a29b308c54ed7294520f5297/README.md"
+  dev_url: "https://github.com/GDelevoye/ipdtools"
+
+extra:
+  recipe-maintainers:
+    - GDelevoye
