@@ -8,7 +8,7 @@ setup(
     name='ipdtools',
     version='0.2.1.alpha',
     author='DELEVOYE Guillaume',
-    license=open('LICENSES.txt').read(),
+    license=open('LICENSE.txt').read(),
     download_url="https://github.com/GDelevoye/ipdtools/archive/0.2.1alpha.tar.gz",
     url="https://github.com/GDelevoye/ipdtools/releases/tag/0.2.1alpha",
     packages=find_packages("."),
