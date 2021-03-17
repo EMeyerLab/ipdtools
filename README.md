@@ -27,7 +27,7 @@ As it is known that the polymerase's speed at a **nucleotide N** is influenced b
 
 > From the source code of **kineticsTools** and the **models** published by PacBio at [kineticsTools](https://github.com/PacificBiosciences/kineticsTools), it was possible to make a **user-friendly** command-line-interface (**CLI**) and **python API** to easily predict **any IPD, in any context** for unmethylated DNA.
 
-NB: Methylated DNA is harder to predict because it often involves a mixture of many possible combinations of signals.
+NB: Methylated DNA is harder to predict because it often involves a mixture of many possible combinations of signals. The original "kineticsTools" does it, but the retroingeneering of it is not achieved yet
 
 
 # Installation
