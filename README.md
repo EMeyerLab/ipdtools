@@ -222,7 +222,7 @@ position | strand | nucleotide |
 
 # Credits
 
-The Original code is copyrighted from Pacific Bioscience California (See "LICENSE") as it is published on Github:  [kineticsTools](https://github.com/PacificBiosciences/kineticsTools) at the date of 30 January 2020.
+The Original code is copyrighted from Pacific Bioscience California (See "LICENSE") as it is published on Github:  [kineticsTools](https://github.com/PacificBiosciences/kineticsTools) at the date of Commits on Apr 25, 2018 (https://github.com/PacificBiosciences/kineticsTools/tree/27a18788b4bae5956710e3bda804dbd5635db2a2).
 
 Major modifications, retro-ingineering, isolation from the PacBio's API, repackaging, python3 compatibility and new documentation are from [Guillaume DELEVOYE](https://github.com/GDelevoye).
 
