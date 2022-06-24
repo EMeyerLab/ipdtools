@@ -158,12 +158,11 @@ Available models are:
 
 **No model** is available for **Sequel II** with **chemistry V1.0**
 
-**SP2-C2 is the latest** of all models [Jan 2020], recommended for **Sequel I and Sequel II v2 data**, including for people using P6-C4 chemistry
-
-**Most RSII user would probably want to use P5-C3 model**
+**SP2-C2 was the latest** model in Jan 2020], and was recommended for **Sequel I and Sequel II v2 data**
 
 > See [here](https://github.com/PacificBiosciences/kineticsTools/pull/71) for more info.
 
+The model <-> sequencing kit conversions are unfortunately not well documented. PacBio tools parse the headers automatically to determine it
 
 # Conventions used
 
