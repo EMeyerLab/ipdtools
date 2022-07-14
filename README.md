@@ -1,10 +1,12 @@
-The PyPi release is still in alpha.
-Automated testings, docs and other things are still missing.
-Please contact me if you can't use the package using the following instructions
-
 # ipdtools
 
 Retro-ingineering of PacBio's modelling of IPD (**RS II, Sequel I, Sequel II v2**). This **won't** work for **Sequel II with v1.0 chemistry.**
+
+# Development state
+
+* The PyPi release is still in alpha.
+* Automated testings and docsare still missing.
+
 
 # Background
 
