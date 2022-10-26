@@ -39,7 +39,7 @@ The program has only be tested in Ubuntu LTS 18 and 20 with pip and conda
 ```console
 user@computer:$ pip install ipdtools
 ```
-> NB: Editable pip install is not guaranteed to work properly.4
+> NB: Editable pip install is not guaranteed to work properly.
 
 ### With conda
 
