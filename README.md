@@ -4,9 +4,7 @@ Retro-ingineering of PacBio's modelling of IPD (**RS II, Sequel I, Sequel II v2*
 
 # Development state
 
-* The PyPi release is still in alpha.
-* Automated testings and docsare still missing.
-
+The project is not anymore under active development, but I will do my best to help you if you post an issue.
 
 # Background
 
@@ -41,14 +39,13 @@ The program has only be tested in Ubuntu LTS 18 and 20 with pip and conda
 ```console
 user@computer:$ pip install ipdtools
 ```
+> NB: Editable pip install is not guaranteed to work properly.4
 
 ### With conda
 
 ```console
-user@computer:$ conda install -c gdelevoye ipdtools 
+user@computer:$ conda install -c gdelevoye ipdtools # Linux only
 ```
-
-Please note that, due to the fact we're compiling a third-party dependency, the "editable" pip install will not be available. Do not clone the repo and then use pip install -e ./ipdtools , it will probably fail or generate errors.
 
 # Usage
 
