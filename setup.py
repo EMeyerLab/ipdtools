@@ -14,6 +14,7 @@ setup(
     packages=find_packages("."),
     url="https://github.com/GDelevoye/ipdtools",
     python_requires='>=3.6',
+    packages=["h5py","tqdm","numpy","pandas","joblib"],
     package_data={'ipdtools': ['resources/*.h5']},
     ext_modules=[Extension('ipdtools/tree_predict', ['ipdtools/tree_predict.c'],
                            extra_compile_args=["-O3", "-shared", "-std=c99"],
